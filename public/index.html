@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Pro v2 - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        body { background-color: #020617; color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .card { background: #0f172a; border: 1px solid #1e293b; }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        #login-screen { background: radial-gradient(circle at center, #1e293b 0%, #020617 100%); }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <!-- Login Screen -->
+    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="card p-10 rounded-3xl w-full max-w-md shadow-2xl border-blue-500/20">
+            <div class="text-center mb-10">
+                <div class="w-20 h-20 bg-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <i class="fas fa-bolt text-4xl text-white"></i>
+                </div>
+                <h1 class="text-3xl font-extrabold tracking-tight">NEXUS <span class="text-blue-500">PRO</span></h1>
+                <p class="text-slate-400 mt-2">Sistema de Gestão de Licenças</p>
+            </div>
+            <div class="space-y-5">
+                <input type="password" id="admin-pass-input" placeholder="Senha Administrativa" 
+                    class="w-full bg-slate-900 border border-slate-800 rounded-xl px-5 py-4 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all">
+                <button onclick="attemptLogin()" class="w-full btn-primary hover:opacity-90 text-white font-bold py-4 rounded-xl transition shadow-lg shadow-blue-500/20">
+                    Acessar Painel
+                </button>
+                <p id="login-error" class="text-red-400 text-sm text-center hidden font-semibold">Acesso negado. Verifique a senha.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="main-content" class="max-w-7xl mx-auto hidden">
+        <!-- Top Bar -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+            <div>
+                <h1 class="text-4xl font-black tracking-tighter">DASHBOARD</h1>
+                <p class="text-slate-400">Gerencie suas chaves e monitore acessos em tempo real.</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="bg-slate-900 border border-slate-800 px-5 py-2 rounded-2xl flex items-center gap-3">
+                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span class="text-sm font-bold text-slate-300">API ONLINE</span>
+                </div>
+                <button onclick="logout()" class="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white px-4 py-2 rounded-xl transition font-bold text-sm">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+            <div class="card p-6 rounded-3xl">
+                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Total de Chaves</p>
+                <h2 id="stat-total" class="text-4xl font-black">0</h2>
+            </div>
+            <div class="card p-6 rounded-3xl">
+                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Total de Usos</p>
+                <h2 id="stat-uses" class="text-4xl font-black">0</h2>
+            </div>
+            <div class="card p-6 rounded-3xl">
+                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Chaves Ativas</p>
+                <h2 id="stat-active" class="text-4xl font-black text-blue-500">0</h2>
+            </div>
+            <div class="card p-6 rounded-3xl">
+                <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Logs Recentes</p>
+                <h2 id="stat-logs" class="text-4xl font-black text-slate-500">0</h2>
+            </div>
+        </div>
+
+        <!-- Create Key Section -->
+        <div class="card p-8 rounded-3xl mb-10 shadow-xl">
+            <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                <i class="fas fa-key text-blue-500"></i> Gerador de Licenças
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Duração</label>
+                    <select id="key-days" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 outline-none focus:border-blue-500">
+                        <option value="0">Vitalícia (∞)</option>
+                        <option value="1">1 Dia</option>
+                        <option value="7">7 Dias</option>
+                        <option value="30">30 Dias</option>
+                        <option value="365">1 Ano</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Identificação / Cliente</label>
+                    <input id="key-desc" type="text" placeholder="Ex: João Silva - VIP" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 outline-none focus:border-blue-500">
+                </div>
+                <div class="flex items-end">
+                    <button onclick="createKey()" class="w-full btn-primary text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-500/20 hover:scale-[1.02] transition">
+                        GERAR CHAVE AGORA
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Section -->
+        <div class="card rounded-3xl overflow-hidden shadow-2xl">
+            <div class="p-8 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                <h3 class="text-xl font-bold">Lista de Licenças</h3>
+                <button onclick="loadKeys()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-sm font-bold transition flex items-center gap-2">
+                    <i class="fas fa-sync-alt"></i> Atualizar
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-900/80 text-slate-500 text-xs font-bold uppercase tracking-widest">
+                            <th class="p-6">Chave de Acesso</th>
+                            <th class="p-6">Cliente / Descrição</th>
+                            <th class="p-6">Expiração</th>
+                            <th class="p-6">Usos</th>
+                            <th class="p-6">HWID (Hardware ID)</th>
+                            <th class="p-6">Status</th>
+                            <th class="p-6 text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="keys-table" class="divide-y divide-slate-800">
+                        <!-- Data will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ADMIN_PASS = localStorage.getItem('nexus_admin_pass') || "";
+
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            const options = {
+                method,
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'admin-password': ADMIN_PASS
+                }
+            };
+            if (body) options.body = JSON.stringify(body);
+            const res = await fetch(endpoint, options);
+            if (res.status === 401) { logout(); return { success: false }; }
+            return res.json();
+        }
+
+        async function attemptLogin() {
+            const input = document.getElementById('admin-pass-input').value;
+            const res = await fetch('/api/admin/stats', { headers: { 'admin-password': input } });
+            if (res.ok) {
+                ADMIN_PASS = input;
+                localStorage.setItem('nexus_admin_pass', input);
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                loadKeys();
+            } else {
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        }
+
+        function logout() { localStorage.removeItem('nexus_admin_pass'); location.reload(); }
+
+        async function loadKeys() {
+            const data = await apiCall('/api/admin/keys');
+            const stats = await apiCall('/api/admin/stats');
+            if (!data.success) return;
+
+            document.getElementById('stat-total').innerText = data.keys.length;
+            document.getElementById('stat-uses').innerText = stats.stats.total_uses || 0;
+            document.getElementById('stat-active').innerText = data.keys.filter(k => k.status === 'active').length;
+
+            const tbody = document.getElementById('keys-table');
+            tbody.innerHTML = data.keys.map(k => `
+                <tr class="hover:bg-slate-800/20 transition group">
+                    <td class="p-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 rounded-full ${k.status === 'active' ? 'bg-green-500' : 'bg-red-500'}"></div>
+                            <span class="font-mono font-bold text-blue-400 select-all">${k.key}</span>
+                        </div>
+                    </td>
+                    <td class="p-6 text-sm text-slate-300 font-semibold">${k.description || 'Sem descrição'}</td>
+                    <td class="p-6 text-sm">
+                        ${k.expires_at ? `<span class="text-slate-400">${new Date(k.expires_at).toLocaleDateString()}</span>` : '<span class="text-green-500 font-bold">VITALÍCIA</span>'}
+                    </td>
+                    <td class="p-6">
+                        <span class="bg-slate-800 px-3 py-1 rounded-lg text-xs font-bold">${k.uses}</span>
+                    </td>
+                    <td class="p-6">
+                        <span class="text-[10px] font-mono text-slate-500 truncate block max-w-[120px]" title="${k.hwid || 'Não vinculado'}">
+                            ${k.hwid || '<span class="italic text-slate-700">Aguardando...</span>'}
+                        </span>
+                    </td>
+                    <td class="p-6">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${k.status === 'active' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}">
+                            ${k.status}
+                        </span>
+                    </td>
+                    <td class="p-6 text-center">
+                        <button onclick="deleteKey('${k.key}')" class="text-slate-600 hover:text-red-500 transition">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function createKey() {
+            const days = parseInt(document.getElementById('key-days').value);
+            const description = document.getElementById('key-desc').value;
+            const res = await apiCall('/api/admin/keys/create', 'POST', { days, description });
+            if (res.success) { loadKeys(); document.getElementById('key-desc').value = ""; }
+        }
+
+        async function deleteKey(key) {
+            if (confirm("Deseja deletar permanentemente a chave " + key + "?")) {
+                await apiCall('/api/admin/keys/' + key, 'DELETE');
+                loadKeys();
+            }
+        }
+
+        if (ADMIN_PASS) attemptLogin();
+    </script>
+</body>
+</html>
